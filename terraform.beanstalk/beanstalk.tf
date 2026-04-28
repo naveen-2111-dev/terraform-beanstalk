@@ -27,11 +27,6 @@ resource "aws_elastic_beanstalk_environment" "env" {
   }
 
   setting {
-    namespace = "aws:elasticbeanstalk:container:python"
-    name      = "WSGIPath"
-    value     = "application:application"
-  }
-  setting {
     namespace = "aws:elasticbeanstalk:application:environment"
     name      = "AWS_REGION"
     value     = "ap-south-1"
