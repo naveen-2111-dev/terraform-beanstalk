@@ -14,16 +14,12 @@ phases:
 
       - echo "Packaging application..."
 
-      # Clean and prepare deploy folder
       - rm -rf deploy && mkdir deploy
 
+      - cp -r app deploy/
 
-      # Create app directory in deploy and copy app source files (not the folder itself)
-      - mkdir -p deploy/app
-      - cp app/*.py deploy/app/
-      - cp requirements.txt Procfile pyproject.toml README.md deploy/ || true
+      - cp Procfile requirements.txt pyproject.toml README.md deploy/ || true
 
-      # Zip the CONTENTS of deploy/ (not the folder itself)
       - cd deploy
       - zip -r ../app.zip .
       - cd ..
