@@ -125,6 +125,7 @@ data "aws_iam_policy_document" "codepipeline_policy" {
       "s3:PutBucketPolicy",
       "s3:PutBucketVersioning",
       "s3:PutObject",
+      "s3:PutBucketOwnershipControls",
       "s3:PutObjectAcl",
     ]
     resources = [
