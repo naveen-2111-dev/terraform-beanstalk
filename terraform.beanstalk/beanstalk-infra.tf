@@ -1,4 +1,3 @@
-# ── S3: Pipeline Artifacts ─────────────────────────────────────────────
 
 resource "aws_s3_bucket" "pipeline_artifacts" {
   bucket        = "${var.app_name}-pipeline-artifacts"
@@ -31,7 +30,6 @@ resource "aws_s3_bucket_public_access_block" "pipeline_artifacts" {
   restrict_public_buckets = true
 }
 
-# ── IAM: CodePipeline Role ─────────────────────────────────────────────
 
 data "aws_iam_policy_document" "codepipeline_assume" {
   statement {
@@ -110,7 +108,6 @@ resource "aws_iam_role_policy" "codepipeline" {
   policy = data.aws_iam_policy_document.codepipeline_policy.json
 }
 
-# ── IAM: CodeBuild Role ────────────────────────────────────────────────
 
 data "aws_iam_policy_document" "codebuild_assume" {
   statement {
@@ -155,7 +152,6 @@ resource "aws_iam_role_policy" "codebuild" {
   policy = data.aws_iam_policy_document.codebuild_policy.json
 }
 
-# ── IAM: Beanstalk EC2 Role ───────────────────────────────────────────
 
 data "aws_iam_policy_document" "beanstalk_ec2_assume" {
   statement {
@@ -188,9 +184,28 @@ resource "aws_iam_instance_profile" "beanstalk_ec2" {
   role = aws_iam_role.beanstalk_ec2.name
 }
 
-# ─────────────────────────────────────────────────────────────
-# 🔥 FIX: Elastic Beanstalk SERVICE ROLE (IMPORTANT)
-# ─────────────────────────────────────────────────────────────
+
+# Add this policy for S3 patching resources
+resource "aws_iam_role_policy" "beanstalk_service_s3_patch" {
+  name = "${var.app_name}-beanstalk-service-s3-patch"
+  role = aws_iam_role.beanstalk_service.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          "arn:aws:s3:::elasticbeanstalk-env-resources-ap-south-1",
+          "arn:aws:s3:::elasticbeanstalk-env-resources-ap-south-1/*"
+        ]
+      }
+    ]
+  })
+}
 
 resource "aws_iam_role" "beanstalk_service" {
   name = "${var.app_name}-beanstalk-service-role"
@@ -212,7 +227,6 @@ resource "aws_iam_role_policy_attachment" "beanstalk_service_attach" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSElasticBeanstalkService"
 }
 
-# ── Beanstalk Application ─────────────────────────────────────────────
 
 resource "aws_elastic_beanstalk_application" "app" {
   name        = var.app_name
@@ -249,7 +263,6 @@ resource "aws_elastic_beanstalk_environment" "env" {
   }
 }
 
-# ── CodeBuild ─────────────────────────────────────────────────────────
 
 resource "aws_cloudwatch_log_group" "codebuild" {
   name              = "/aws/codebuild/${var.app_name}"
@@ -282,7 +295,6 @@ resource "aws_codebuild_project" "app" {
   }
 }
 
-# ── CodeStar + Pipeline ───────────────────────────────────────────────
 
 resource "aws_codestarconnections_connection" "github" {
   name          = "${var.app_name}-github-connection"
@@ -354,7 +366,6 @@ resource "aws_codepipeline" "app" {
   }
 }
 
-# ── Outputs ────────────────────────────────────────────────────────────
 
 output "beanstalk_endpoint" {
   value = aws_elastic_beanstalk_environment.env.endpoint_url
