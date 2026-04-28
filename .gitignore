@@ -23,3 +23,5 @@ terraform.tfplan
 # End Terraform ignores
 
 .env
+
+
