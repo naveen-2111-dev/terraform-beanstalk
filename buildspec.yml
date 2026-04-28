@@ -13,18 +13,23 @@ phases:
       - python -m pytest tests/ -v || true
 
       - echo "Packaging application..."
+
+      # Clean and prepare deploy folder
       - rm -rf deploy && mkdir deploy
 
-      # copy app
+      # Copy app and config files to deploy root
       - cp -r app deploy/
-
-      # copy dependencies
-      - cp -r package/* deploy/
-
-      # copy config files
       - cp requirements.txt Procfile pyproject.toml README.md deploy/ || true
 
+      # Copy dependencies to deploy root
+      - cp -r package/* deploy/
+
+      # Zip the CONTENTS of deploy/ (not the folder itself)
+      - cd deploy
+      - zip -r ../app.zip .
+      - cd ..
+
 artifacts:
-  base-directory: deploy
   files:
-    - '**/*'
+    - app.zip
+  discard-paths: yes
