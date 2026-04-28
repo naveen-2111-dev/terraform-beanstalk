@@ -81,15 +81,12 @@ data "aws_iam_policy_document" "codepipeline_policy" {
   statement {
     effect = "Allow"
     actions = [
-      "elasticbeanstalk:CreateApplicationVersion",
-      "elasticbeanstalk:DescribeApplicationVersions",
-      "elasticbeanstalk:DescribeEnvironments",
-      "elasticbeanstalk:DescribeEvents",
-      "elasticbeanstalk:UpdateEnvironment",
+      "elasticbeanstalk:*",
       "autoscaling:DescribeAutoScalingGroups",
       "autoscaling:DescribeScalingActivities",
       "autoscaling:ResumeProcesses",
       "autoscaling:SuspendProcesses",
+      "autoscaling:UpdateAutoScalingGroup",
       "cloudformation:DescribeStacks",
       "cloudformation:DescribeStackResource",
       "cloudformation:DescribeStackResources",
@@ -106,28 +103,14 @@ data "aws_iam_policy_document" "codepipeline_policy" {
       "elasticloadbalancing:DescribeLoadBalancers",
       "rds:DescribeDBInstances",
       "sns:ListSubscriptionsByTopic",
-      "s3:GetBucketPolicy",
-      "s3:ListBucket",
     ]
     resources = ["*"]
   }
 
+  # Beanstalk internally creates and manages this bucket — needs full s3 access on it
   statement {
-    effect = "Allow"
-    actions = [
-      "s3:CreateBucket",
-      "s3:DeleteObject",
-      "s3:GetObject",
-      "s3:GetObjectAcl",
-      "s3:GetBucketPolicy",
-      "s3:GetBucketVersioning",
-      "s3:ListBucket",
-      "s3:PutBucketPolicy",
-      "s3:PutBucketVersioning",
-      "s3:PutObject",
-      "s3:PutBucketOwnershipControls",
-      "s3:PutObjectAcl",
-    ]
+    effect    = "Allow"
+    actions   = ["s3:*"]
     resources = [
       "arn:aws:s3:::elasticbeanstalk-${var.region}-*",
       "arn:aws:s3:::elasticbeanstalk-${var.region}-*/*",
@@ -218,6 +201,32 @@ resource "aws_iam_role_policy_attachment" "beanstalk_web_tier" {
 resource "aws_iam_role_policy_attachment" "beanstalk_ssm" {
   role       = aws_iam_role.beanstalk_ec2.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+# EC2 instance needs to read patching scripts and app artifacts from Beanstalk S3 buckets
+resource "aws_iam_role_policy" "beanstalk_ec2_s3" {
+  name = "${var.app_name}-beanstalk-ec2-s3-policy"
+  role = aws_iam_role.beanstalk_ec2.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:GetObjectVersion",
+          "s3:ListBucket",
+        ]
+        Resource = [
+          "arn:aws:s3:::elasticbeanstalk-env-resources-${var.region}",
+          "arn:aws:s3:::elasticbeanstalk-env-resources-${var.region}/*",
+          "arn:aws:s3:::elasticbeanstalk-${var.region}-*",
+          "arn:aws:s3:::elasticbeanstalk-${var.region}-*/*",
+        ]
+      }
+    ]
+  })
 }
 
 resource "aws_iam_instance_profile" "beanstalk_ec2" {
