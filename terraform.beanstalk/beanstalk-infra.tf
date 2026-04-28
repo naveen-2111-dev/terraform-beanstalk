@@ -111,6 +111,27 @@ data "aws_iam_policy_document" "codepipeline_policy" {
     ]
     resources = ["*"]
   }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:CreateBucket",
+      "s3:DeleteObject",
+      "s3:GetObject",
+      "s3:GetObjectAcl",
+      "s3:GetBucketPolicy",
+      "s3:GetBucketVersioning",
+      "s3:ListBucket",
+      "s3:PutBucketPolicy",
+      "s3:PutBucketVersioning",
+      "s3:PutObject",
+      "s3:PutObjectAcl",
+    ]
+    resources = [
+      "arn:aws:s3:::elasticbeanstalk-${var.region}-*",
+      "arn:aws:s3:::elasticbeanstalk-${var.region}-*/*",
+    ]
+  }
 }
 
 resource "aws_iam_role_policy" "codepipeline" {
@@ -278,9 +299,11 @@ resource "aws_codebuild_project" "app" {
   }
 
   source {
-    type      = "CODEPIPELINE"
+    type = "CODEPIPELINE"
   }
 }
+
+# ── CodeStar + CodePipeline ────────────────────────────────────────────
 
 resource "aws_codestarconnections_connection" "github" {
   name          = "${var.app_name}-github-connection"
