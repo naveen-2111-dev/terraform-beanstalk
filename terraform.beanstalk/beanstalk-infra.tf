@@ -1,3 +1,5 @@
+# ── S3: Pipeline Artifacts ─────────────────────────────────────────────
+
 resource "aws_s3_bucket" "pipeline_artifacts" {
   bucket        = "${var.app_name}-pipeline-artifacts"
   force_destroy = true
@@ -82,32 +84,16 @@ data "aws_iam_policy_document" "codepipeline_policy" {
     effect = "Allow"
     actions = [
       "elasticbeanstalk:*",
-      "autoscaling:DescribeAutoScalingGroups",
-      "autoscaling:DescribeScalingActivities",
-      "autoscaling:ResumeProcesses",
-      "autoscaling:SuspendProcesses",
-      "autoscaling:UpdateAutoScalingGroup",
-      "cloudformation:DescribeStacks",
-      "cloudformation:DescribeStackResource",
-      "cloudformation:DescribeStackResources",
-      "cloudformation:DescribeStackEvents",
-      "cloudformation:GetTemplate",
-      "cloudformation:UpdateStack",
-      "ec2:DescribeInstances",
-      "ec2:DescribeImages",
-      "ec2:DescribeAddresses",
-      "ec2:DescribeSubnets",
-      "ec2:DescribeVpcs",
-      "ec2:DescribeSecurityGroups",
-      "ec2:DescribeKeyPairs",
-      "elasticloadbalancing:DescribeLoadBalancers",
-      "rds:DescribeDBInstances",
+      "autoscaling:*",
+      "cloudformation:*",
+      "ec2:*",
+      "elasticloadbalancing:*",
+      "rds:*",
       "sns:ListSubscriptionsByTopic",
     ]
     resources = ["*"]
   }
 
-  # Beanstalk internally creates and manages this bucket — needs full s3 access on it
   statement {
     effect    = "Allow"
     actions   = ["s3:*"]
@@ -146,21 +132,15 @@ data "aws_iam_policy_document" "codebuild_policy" {
   statement {
     effect = "Allow"
     actions = [
-      "logs:CreateLogGroup",
-      "logs:CreateLogStream",
-      "logs:PutLogEvents",
+      "logs:*"
     ]
-    resources = [
-      "arn:aws:logs:${var.region}:*:log-group:/aws/codebuild/${var.app_name}*",
-    ]
+    resources = ["*"]
   }
 
   statement {
     effect = "Allow"
     actions = [
-      "s3:GetObject",
-      "s3:GetObjectVersion",
-      "s3:PutObject",
+      "s3:*"
     ]
     resources = [
       aws_s3_bucket.pipeline_artifacts.arn,
@@ -175,7 +155,7 @@ resource "aws_iam_role_policy" "codebuild" {
   policy = data.aws_iam_policy_document.codebuild_policy.json
 }
 
-# ── IAM: Beanstalk EC2 Instance Profile ───────────────────────────────
+# ── IAM: Beanstalk EC2 Role ───────────────────────────────────────────
 
 data "aws_iam_policy_document" "beanstalk_ec2_assume" {
   statement {
@@ -203,38 +183,36 @@ resource "aws_iam_role_policy_attachment" "beanstalk_ssm" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
-# EC2 instance needs to read patching scripts and app artifacts from Beanstalk S3 buckets
-resource "aws_iam_role_policy" "beanstalk_ec2_s3" {
-  name = "${var.app_name}-beanstalk-ec2-s3-policy"
-  role = aws_iam_role.beanstalk_ec2.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:GetObjectVersion",
-          "s3:ListBucket",
-        ]
-        Resource = [
-          "arn:aws:s3:::elasticbeanstalk-env-resources-${var.region}",
-          "arn:aws:s3:::elasticbeanstalk-env-resources-${var.region}/*",
-          "arn:aws:s3:::elasticbeanstalk-${var.region}-*",
-          "arn:aws:s3:::elasticbeanstalk-${var.region}-*/*",
-        ]
-      }
-    ]
-  })
-}
-
 resource "aws_iam_instance_profile" "beanstalk_ec2" {
   name = "${var.app_name}-beanstalk-ec2-profile"
   role = aws_iam_role.beanstalk_ec2.name
 }
 
-# ── Beanstalk ──────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+# 🔥 FIX: Elastic Beanstalk SERVICE ROLE (IMPORTANT)
+# ─────────────────────────────────────────────────────────────
+
+resource "aws_iam_role" "beanstalk_service" {
+  name = "${var.app_name}-beanstalk-service-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Service = "elasticbeanstalk.amazonaws.com"
+      }
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "beanstalk_service_attach" {
+  role       = aws_iam_role.beanstalk_service.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSElasticBeanstalkService"
+}
+
+# ── Beanstalk Application ─────────────────────────────────────────────
 
 resource "aws_elastic_beanstalk_application" "app" {
   name        = var.app_name
@@ -253,9 +231,9 @@ resource "aws_elastic_beanstalk_environment" "env" {
   }
 
   setting {
-    namespace = "aws:autoscaling:launchconfiguration"
-    name      = "InstanceType"
-    value     = "t3.micro"
+    namespace = "aws:elasticbeanstalk:environment"
+    name      = "ServiceRole"
+    value     = aws_iam_role.beanstalk_service.name
   }
 
   setting {
@@ -265,19 +243,13 @@ resource "aws_elastic_beanstalk_environment" "env" {
   }
 
   setting {
-    namespace = "aws:elasticbeanstalk:application:environment"
-    name      = "PYTHONPATH"
-    value     = "/var/app/current"
-  }
-
-  setting {
     namespace = "aws:elasticbeanstalk:container:python"
     name      = "WSGIPath"
     value     = "application:application"
   }
 }
 
-# ── CodeBuild ──────────────────────────────────────────────────────────
+# ── CodeBuild ─────────────────────────────────────────────────────────
 
 resource "aws_cloudwatch_log_group" "codebuild" {
   name              = "/aws/codebuild/${var.app_name}"
@@ -285,20 +257,17 @@ resource "aws_cloudwatch_log_group" "codebuild" {
 }
 
 resource "aws_codebuild_project" "app" {
-  name          = "${var.app_name}-build"
-  description   = "Builds and packages the Python application"
-  build_timeout = 10
-  service_role  = aws_iam_role.codebuild.arn
+  name         = "${var.app_name}-build"
+  service_role = aws_iam_role.codebuild.arn
 
   artifacts {
     type = "CODEPIPELINE"
   }
 
   environment {
-    compute_type                = "BUILD_GENERAL1_SMALL"
-    image                       = "aws/codebuild/standard:7.0"
-    type                        = "LINUX_CONTAINER"
-    image_pull_credentials_type = "CODEBUILD"
+    compute_type = "BUILD_GENERAL1_SMALL"
+    image        = "aws/codebuild/standard:7.0"
+    type         = "LINUX_CONTAINER"
   }
 
   logs_config {
@@ -313,7 +282,7 @@ resource "aws_codebuild_project" "app" {
   }
 }
 
-# ── CodeStar + CodePipeline ────────────────────────────────────────────
+# ── CodeStar + Pipeline ───────────────────────────────────────────────
 
 resource "aws_codestarconnections_connection" "github" {
   name          = "${var.app_name}-github-connection"
@@ -327,66 +296,60 @@ resource "aws_codepipeline" "app" {
   artifact_store {
     location = aws_s3_bucket.pipeline_artifacts.bucket
     type     = "S3"
-
-    encryption_key {
-      id   = "alias/aws/s3"
-      type = "KMS"
-    }
   }
 
   stage {
     name = "Source"
-
     action {
-      name             = "GitHub_Source"
-      category         = "Source"
-      owner            = "AWS"
-      provider         = "CodeStarSourceConnection"
-      version          = "1"
-      output_artifacts = ["source_output"]
+      name     = "GitHub_Source"
+      category = "Source"
+      owner    = "AWS"
+      provider = "CodeStarSourceConnection"
 
       configuration = {
-        ConnectionArn        = aws_codestarconnections_connection.github.arn
-        FullRepositoryId     = "${var.github_owner}/${var.github_repo}"
-        BranchName           = var.github_branch
-        OutputArtifactFormat = "CODE_ZIP"
+        ConnectionArn    = aws_codestarconnections_connection.github.arn
+        FullRepositoryId = "${var.github_owner}/${var.github_repo}"
+        BranchName       = var.github_branch
       }
+
+      output_artifacts = ["source_output"]
+      version          = "1"
     }
   }
 
   stage {
     name = "Build"
-
     action {
-      name             = "CodeBuild"
-      category         = "Build"
-      owner            = "AWS"
-      provider         = "CodeBuild"
-      input_artifacts  = ["source_output"]
+      name            = "Build"
+      category        = "Build"
+      owner           = "AWS"
+      provider        = "CodeBuild"
+      input_artifacts = ["source_output"]
       output_artifacts = ["build_output"]
-      version          = "1"
 
       configuration = {
         ProjectName = aws_codebuild_project.app.name
       }
+
+      version = "1"
     }
   }
 
   stage {
     name = "Deploy"
-
     action {
-      name            = "Beanstalk_Deploy"
+      name            = "Deploy"
       category        = "Deploy"
       owner           = "AWS"
       provider        = "ElasticBeanstalk"
       input_artifacts = ["build_output"]
-      version         = "1"
 
       configuration = {
         ApplicationName = aws_elastic_beanstalk_application.app.name
         EnvironmentName = aws_elastic_beanstalk_environment.env.name
       }
+
+      version = "1"
     }
   }
 }
@@ -394,16 +357,9 @@ resource "aws_codepipeline" "app" {
 # ── Outputs ────────────────────────────────────────────────────────────
 
 output "beanstalk_endpoint" {
-  description = "URL of the Beanstalk environment"
-  value       = aws_elastic_beanstalk_environment.env.endpoint_url
+  value = aws_elastic_beanstalk_environment.env.endpoint_url
 }
 
 output "pipeline_name" {
-  description = "CodePipeline name"
-  value       = aws_codepipeline.app.name
-}
-
-output "codestar_connection_arn" {
-  description = "Approve this connection in AWS Console after apply"
-  value       = aws_codestarconnections_connection.github.arn
+  value = aws_codepipeline.app.name
 }
