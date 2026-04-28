@@ -9,9 +9,7 @@ phases:
 
   build:
     commands:
-      - zip -r app.zip app/ Procfile requirements.txt
-      - echo "--- ZIP CONTENTS ---"
-      - unzip -l app.zip
+      - zip -r app.zip app/ requirements.txt
 
 artifacts:
   files:
