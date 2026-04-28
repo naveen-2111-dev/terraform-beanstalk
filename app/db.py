@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+//dynamo db file
 dynamodb = boto3.resource(
     "dynamodb",
     region_name=os.getenv("AWS_REGION"),
