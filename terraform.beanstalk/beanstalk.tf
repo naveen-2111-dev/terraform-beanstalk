@@ -52,6 +52,12 @@ resource "aws_elastic_beanstalk_environment" "env" {
 
   setting {
     namespace = "aws:elasticbeanstalk:application:environment"
+    name      = "PYTHONPATH"
+    value     = "/var/app/current"
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
     name      = "AWS_SECRET_ACCESS_KEY"
     value     = var.aws_secret_access_key
   }
