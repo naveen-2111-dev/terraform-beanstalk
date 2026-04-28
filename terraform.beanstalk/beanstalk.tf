@@ -29,7 +29,7 @@ resource "aws_elastic_beanstalk_environment" "env" {
   setting {
     namespace = "aws:elasticbeanstalk:container:python"
     name      = "WSGIPath"
-    value     = "main:app"
+    value     = "app.main:app"
   }
 
   setting {
