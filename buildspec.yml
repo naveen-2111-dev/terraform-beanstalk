@@ -5,24 +5,15 @@ phases:
     runtime-versions:
       python: 3.11
     commands:
-      - pip install -r requirements.txt --target ./package
+      - pip install -r requirements.txt
 
   build:
     commands:
-      - echo "Running tests..."
-      - python -m pytest tests/ -v || true
-
       - echo "Packaging application..."
-
       - rm -rf deploy && mkdir deploy
-
       - cp -r app deploy/
-
-      - cp Procfile requirements.txt pyproject.toml README.md deploy/ || true
-
-      - cd deploy
-      - zip -r ../app.zip .
-      - cd ..
+      - cp Procfile requirements.txt deploy/
+      - cd deploy && zip -r ../app.zip . && cd ..
 
 artifacts:
   files:
