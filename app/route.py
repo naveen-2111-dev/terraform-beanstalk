@@ -4,6 +4,7 @@ from app.models import User
 
 router = APIRouter()
 
+# Create a new user
 @router.post("/user")
 def create_user(user: User):
     try:
