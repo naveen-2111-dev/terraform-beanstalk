@@ -9,7 +9,8 @@ phases:
 
   build:
     commands:
-      - zip -r app.zip app/ requirements.txt
+      - cd app
+      - zip -r ../app.zip .
 
 artifacts:
   files:
