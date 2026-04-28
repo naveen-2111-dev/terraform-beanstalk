@@ -22,77 +22,10 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
 
       {
         Effect = "Allow"
-        Action = [
-          "s3:*"
-        ]
-        Resource = [
-          aws_s3_bucket.pipeline_artifacts.arn,
-          "${aws_s3_bucket.pipeline_artifacts.arn}/*"
-        ]
-      },
-
-      {
-        Effect = "Allow"
-        Action = [
-          "codestar-connections:UseConnection"
-        ]
-        Resource = [aws_codestarconnections_connection.github.arn]
-      },
-
-      {
-        Effect = "Allow"
-        Action = [
-          "codebuild:StartBuild",
-          "codebuild:BatchGetBuilds"
-        ]
-        Resource = "*"
-      },
-
-      {
-        Effect = "Allow"
-        Action = [
-          "elasticbeanstalk:*"
-        ]
-        Resource = "*"
-      },
-
-      {
-        Effect = "Allow"
-        Action = [
-          "elasticbeanstalk:CreateStorageLocation"
-        ]
-        Resource = "*"
-      },
-
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:CreateBucket",
-          "s3:GetBucketLocation",
-          "s3:PutObject",
-          "s3:GetObject",
-          "s3:ListBucket"
-        ]
-        Resource = [
-          "arn:aws:s3:::elasticbeanstalk-*",
-          "arn:aws:s3:::elasticbeanstalk-*/*"
-        ]
-      },
-
-      {
-        Effect = "Allow"
-        Action = [
-          "cloudformation:CreateStack",
-          "cloudformation:UpdateStack",
-          "cloudformation:DeleteStack",
-          "cloudformation:DescribeStacks",
-          "cloudformation:DescribeStackEvents",
-          "cloudformation:DescribeStackResources",
-          "cloudformation:ListStackResources",
-          "cloudformation:GetTemplate"
-        ]
+        Action = "*"
         Resource = "*"
       }
+
     ]
   })
 }
