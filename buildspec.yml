@@ -24,12 +24,7 @@ phases:
       # copy config files
       - cp requirements.txt Procfile pyproject.toml README.md deploy/ || true
 
-      # zip
-      - cd deploy
-      - zip -r ../app.zip .
-      - cd ..
-
 artifacts:
+  base-directory: deploy
   files:
-    - app.zip
-  discard-paths: yes
+    - '**/*'
