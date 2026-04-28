@@ -31,4 +31,24 @@ resource "aws_elastic_beanstalk_environment" "env" {
     name      = "WSGIPath"
     value     = "application:application"
   }
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name      = "AWS_REGION"
+    value     = "ap-south-1"
+  }
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name      = "AWS_ACCESS_KEY_ID"
+    value     = var.aws_access_key_id
+  }
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name      = "AWS_SECRET_ACCESS_KEY"
+    value     = var.aws_secret_access_key
+  }
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name      = "TABLE_NAME"
+    value     = "FastAPIData"
+  }
 }

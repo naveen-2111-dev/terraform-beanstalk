@@ -30,3 +30,11 @@ variable "solution_stack" {
   type    = string
   default = "64bit Amazon Linux 2023 v4.12.1 running Python 3.11"
 }
+
+variable "aws_access_key_id" {
+  sensitive = true
+}
+
+variable "aws_secret_access_key" {
+  sensitive = true
+}
