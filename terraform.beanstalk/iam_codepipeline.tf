@@ -22,9 +22,7 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
 
       {
         Effect = "Allow"
-        Action = [
-          "s3:*"
-        ]
+        Action = ["s3:*"]
         Resource = [
           aws_s3_bucket.pipeline_artifacts.arn,
           "${aws_s3_bucket.pipeline_artifacts.arn}/*"
@@ -33,9 +31,7 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
 
       {
         Effect = "Allow"
-        Action = [
-          "codestar-connections:UseConnection"
-        ]
+        Action = ["codestar-connections:UseConnection"]
         Resource = [aws_codestarconnections_connection.github.arn]
       },
 
@@ -50,17 +46,13 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
 
       {
         Effect = "Allow"
-        Action = [
-          "elasticbeanstalk:*"
-        ]
+        Action = ["elasticbeanstalk:*"]
         Resource = "*"
       },
 
       {
         Effect = "Allow"
-        Action = [
-          "elasticbeanstalk:CreateStorageLocation"
-        ]
+        Action = ["elasticbeanstalk:CreateStorageLocation"]
         Resource = "*"
       },
 
@@ -77,6 +69,21 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
           "arn:aws:s3:::elasticbeanstalk-*",
           "arn:aws:s3:::elasticbeanstalk-*/*"
         ]
+      },
+
+      {
+        Effect = "Allow"
+        Action = [
+          "cloudformation:CreateStack",
+          "cloudformation:UpdateStack",
+          "cloudformation:DeleteStack",
+          "cloudformation:DescribeStacks",
+          "cloudformation:DescribeStackEvents",
+          "cloudformation:DescribeStackResources",
+          "cloudformation:GetTemplate",
+          "cloudformation:ListStackResources"
+        ]
+        Resource = "*"
       }
 
     ]

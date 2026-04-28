@@ -15,25 +15,25 @@ resource "aws_iam_role" "codebuild" {
   assume_role_policy = data.aws_iam_policy_document.codebuild_assume.json
 }
 
-data "aws_iam_policy_document" "codebuild_policy" {
+resource "aws_iam_role_policy" "codebuild_policy" {
+  role = aws_iam_role.codebuild.id
 
-  statement {
-    effect  = "Allow"
-    actions = ["logs:*"]
-    resources = ["*"]
-  }
-
-  statement {
-    effect  = "Allow"
-    actions = ["s3:*"]
-    resources = [
-      aws_s3_bucket.pipeline_artifacts.arn,
-      "${aws_s3_bucket.pipeline_artifacts.arn}/*"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = ["logs:*"]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = ["s3:*"]
+        Resource = [
+          aws_s3_bucket.pipeline_artifacts.arn,
+          "${aws_s3_bucket.pipeline_artifacts.arn}/*"
+        ]
+      }
     ]
-  }
-}
-
-resource "aws_iam_role_policy" "codebuild" {
-  role   = aws_iam_role.codebuild.id
-  policy = data.aws_iam_policy_document.codebuild_policy.json
+  })
 }
