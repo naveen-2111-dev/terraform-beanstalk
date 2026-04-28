@@ -9,11 +9,10 @@ phases:
 
   build:
     commands:
-      - echo "Packaging application..."
       - rm -rf deploy && mkdir deploy
       - cp -r app deploy/
       - cp Procfile requirements.txt deploy/
-      - cd deploy && zip -r ../app.zip . && cd ..
+      - zip -r app.zip deploy/
 
 artifacts:
   files:
