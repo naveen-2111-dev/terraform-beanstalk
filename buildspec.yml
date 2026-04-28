@@ -6,12 +6,28 @@ phases:
       python: 3.11
     commands:
       - pip install -r requirements.txt --target ./package
+
   build:
     commands:
       - echo "Running tests..."
       - python -m pytest tests/ -v || true
+
       - echo "Packaging application..."
-      - zip -r app.zip . -x "*.git*" -x "tests/*" -x ".terraform/*"
+      - rm -rf deploy && mkdir deploy
+
+      # copy app
+      - cp -r app deploy/
+
+      # copy dependencies
+      - cp -r package/* deploy/
+
+      # copy config files
+      - cp requirements.txt Procfile pyproject.toml README.md deploy/ || true
+
+      # zip
+      - cd deploy
+      - zip -r ../app.zip .
+      - cd ..
 
 artifacts:
   files:
