@@ -18,7 +18,7 @@ variable "github_owner" {
 }
 
 variable "github_repo" {
-  default = ""
+  default = "terraform-beanstalk"
 }
 
 variable "github_branch" {
@@ -28,5 +28,5 @@ variable "github_branch" {
 
 variable "solution_stack" {
   type    = string
-  default = "64bit Amazon Linux 2023 v4.0.0 running Python 3.13"
+  default = "64bit Amazon Linux 2023 v4.12.1 running Python 3.11"
 }
