@@ -279,29 +279,8 @@ resource "aws_codebuild_project" "app" {
 
   source {
     type      = "CODEPIPELINE"
-    buildspec = <<-BUILDSPEC
-      version: 0.2
-      phases:
-        install:
-          runtime-versions:
-            python: 3.11
-          commands:
-            - pip install -r requirements.txt
-        build:
-          commands:
-            - echo "Running tests..."
-            - python -m pytest tests/ -v || true
-            - echo "Packaging application..."
-            - zip -r app.zip . -x "*.git*" -x "tests/*"
-      artifacts:
-        files:
-          - app.zip
-        discard-paths: yes
-    BUILDSPEC
   }
 }
-
-# ── CodeStar + CodePipeline ────────────────────────────────────────────
 
 resource "aws_codestarconnections_connection" "github" {
   name          = "${var.app_name}-github-connection"
