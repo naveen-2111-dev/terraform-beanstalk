@@ -17,8 +17,10 @@ phases:
       # Clean and prepare deploy folder
       - rm -rf deploy && mkdir deploy
 
-      # Copy app and config files to deploy root
-      - cp -r app deploy/
+
+      # Create app directory in deploy and copy app source files (not the folder itself)
+      - mkdir -p deploy/app
+      - cp app/*.py deploy/app/
       - cp requirements.txt Procfile pyproject.toml README.md deploy/ || true
 
       # Zip the CONTENTS of deploy/ (not the folder itself)
