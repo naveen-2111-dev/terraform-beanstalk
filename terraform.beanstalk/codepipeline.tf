@@ -63,6 +63,7 @@ resource "aws_codepipeline" "app" {
         EnvironmentName = aws_elastic_beanstalk_environment.env.name
       }
 
+
       version = "1"
     }
   }
