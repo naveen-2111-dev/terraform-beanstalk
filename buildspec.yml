@@ -9,10 +9,9 @@ phases:
 
   build:
     commands:
-      - rm -rf deploy && mkdir deploy
-      - cp -r app deploy/
-      - cp Procfile requirements.txt deploy/
-      - zip -r app.zip deploy/
+      - zip -r app.zip app/ Procfile requirements.txt
+      - echo "--- ZIP CONTENTS ---"
+      - unzip -l app.zip
 
 artifacts:
   files:
